@@ -1,0 +1,162 @@
+{
+  "gerado_em": "2026-09-20 16:42:18",
+  "maquina": {
+    "sistema": "Darwin 25.6.0",
+    "python": "3.9.6",
+    "arquitetura": "arm64",
+    "nucleos_logicos": 6,
+    "nucleos_fisicos": 6,
+    "modelo": "Apple A18 Pro",
+    "observacao": "nucleos_fisicos e modelo redescobertos apos a medicao; sem lscpu a deteccao anterior devolvia 0. Os tempos nao foram alterados."
+  },
+  "corpus": {
+    "diretorio": "dados/corpus",
+    "documentos": 6500,
+    "bytes": 69307828
+  },
+  "tamanho_lote": 150,
+  "repeticoes": 3,
+  "trabalhadores_medidos": [
+    1,
+    2,
+    4,
+    6
+  ],
+  "sequencial": {
+    "tempos_s": [
+      78.907,
+      86.033,
+      83.721
+    ],
+    "tempo_mediano_s": 83.721,
+    "p_instrumentado": 0.9895,
+    "sha256": "ebec046d421b34e193458c4700d569ea062975a64fedbf6be9b7d6c11d65beeb"
+  },
+  "paralelo": [
+    {
+      "motor": "processo",
+      "trabalhadores": 1,
+      "tempos_s": [
+        82.729,
+        80.646,
+        80.289
+      ],
+      "tempo_mediano_s": 80.646,
+      "speedup": 1.038,
+      "eficiencia": 1.038,
+      "amdahl_teto": 1.0,
+      "karp_flatt_e": null,
+      "espera_na_trava_s": 0.0,
+      "resultado_estavel": true,
+      "igual_ao_sequencial": true
+    },
+    {
+      "motor": "processo",
+      "trabalhadores": 2,
+      "tempos_s": [
+        53.56,
+        53.467,
+        52.679
+      ],
+      "tempo_mediano_s": 53.467,
+      "speedup": 1.566,
+      "eficiencia": 0.783,
+      "amdahl_teto": 1.979,
+      "karp_flatt_e": 0.2773,
+      "espera_na_trava_s": 0.014,
+      "resultado_estavel": true,
+      "igual_ao_sequencial": true
+    },
+    {
+      "motor": "processo",
+      "trabalhadores": 4,
+      "tempos_s": [
+        35.239,
+        36.294,
+        36.119
+      ],
+      "tempo_mediano_s": 36.119,
+      "speedup": 2.318,
+      "eficiencia": 0.579,
+      "amdahl_teto": 3.878,
+      "karp_flatt_e": 0.2419,
+      "espera_na_trava_s": 0.011,
+      "resultado_estavel": true,
+      "igual_ao_sequencial": true
+    },
+    {
+      "motor": "processo",
+      "trabalhadores": 6,
+      "tempos_s": [
+        28.649,
+        28.426,
+        28.466
+      ],
+      "tempo_mediano_s": 28.466,
+      "speedup": 2.941,
+      "eficiencia": 0.49,
+      "amdahl_teto": 5.702,
+      "karp_flatt_e": 0.208,
+      "espera_na_trava_s": 0.065,
+      "resultado_estavel": true,
+      "igual_ao_sequencial": true
+    },
+    {
+      "motor": "thread",
+      "trabalhadores": 2,
+      "tempos_s": [
+        77.854,
+        77.057,
+        77.593
+      ],
+      "tempo_mediano_s": 77.593,
+      "speedup": 1.079,
+      "eficiencia": 0.539,
+      "amdahl_teto": 1.979,
+      "karp_flatt_e": 0.8536,
+      "espera_na_trava_s": 0.0,
+      "resultado_estavel": true,
+      "igual_ao_sequencial": true
+    },
+    {
+      "motor": "thread",
+      "trabalhadores": 4,
+      "tempos_s": [
+        78.488,
+        77.917,
+        78.229
+      ],
+      "tempo_mediano_s": 78.229,
+      "speedup": 1.07,
+      "eficiencia": 0.268,
+      "amdahl_teto": 3.878,
+      "karp_flatt_e": 0.9125,
+      "espera_na_trava_s": 0.0,
+      "resultado_estavel": true,
+      "igual_ao_sequencial": true
+    },
+    {
+      "motor": "thread",
+      "trabalhadores": 6,
+      "tempos_s": [
+        78.293,
+        78.205,
+        78.024
+      ],
+      "tempo_mediano_s": 78.205,
+      "speedup": 1.071,
+      "eficiencia": 0.178,
+      "amdahl_teto": 5.702,
+      "karp_flatt_e": 0.9209,
+      "espera_na_trava_s": 0.0,
+      "resultado_estavel": true,
+      "igual_ao_sequencial": true
+    }
+  ],
+  "eventos": {
+    "arquivo": "resultados/eventos.json",
+    "fusoes": 44,
+    "trabalhadores": 6,
+    "carimbo_maximo": 45
+  }
+}

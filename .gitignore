@@ -1,0 +1,16 @@
+# Entrada gerada: 79 MiB reproduzidos por `python3 src/corpus.py` com semente fixa.
+dados/
+
+# Saidas de execucao avulsa. A medicao (medicao.json, eventos.json) NAO entra
+# aqui: ela e a prova por tras da tabela do relatorio e fica versionada.
+resultados/relatorio_sequencial.json
+resultados/relatorio_paralelo.json
+resultados/medicao.log
+
+# Passo intermediario dos geradores de PDF.
+apresentacao/rascunhos/
+
+__pycache__/
+*.pyc
+*.pem
+.DS_Store
