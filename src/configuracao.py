@@ -32,16 +32,25 @@ EQUIPE = {
 
 INFRA = {
     "provedor": "AWS EC2",
-    "regiao": "sa-east-1 (São Paulo)",
-    "zona": "sa-east-1a",
-    "tipo_instancia": "c6i.2xlarge",   # 8 vCPU / 16 GiB, sem creditos de CPU
-    "vcpu": 8,
-    "nucleos_fisicos": 4,
+    "regiao": "us-east-1 (Norte da Virgínia)",
+    "zona": "us-east-1c",
+    "tipo_instancia": "c5.large",   # 2 vCPU / 4 GiB, sem creditos de CPU
+    "vcpu": 2,
+    "nucleos_fisicos": 1,
     "disco_gib": 30,
     "bucket": "sdp-etapa1-equipe (PREENCHER)",
-    "origem_admin": "PREENCHER: <IP-publico-da-equipe>/32",
+    "origem_admin": "131.255.64.194/32",
     "porta_servico": 8000,
     "documentos_previstos": 15000,
+    # Por que esta regiao. Na conta da equipe (AWS Academy Learner Lab) a
+    # regiao nao e escolha: o laboratorio restringe a operacao a us-east-1.
+    "motivo_regiao": (
+        "A regi&atilde;o n&atilde;o foi uma escolha de projeto: a conta "
+        "dispon&iacute;vel &eacute; um AWS Academy Learner Lab, que restringe a "
+        "opera&ccedil;&atilde;o a us-east-1. O experimento n&atilde;o depende "
+        "disso &mdash; T(1) e T(n) s&atilde;o medidos na mesma inst&acirc;ncia, "
+        "e a lat&ecirc;ncia at&eacute; a equipe n&atilde;o entra no tempo "
+        "medido, porque o corpus &eacute; lido do disco local."),
     "sla_uma_zona": "99,5 % (216 min/mes)",
     "sla_multi_zona": "99,99 % (4,3 min/mes)",
 }

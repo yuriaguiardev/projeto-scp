@@ -87,16 +87,63 @@ def amdahl(p, n):
     return 1.0 / ((1 - p) + p / n)
 
 
+def trabalhadores(n):
+    """
+    Varredura de trabalhadores para uma maquina de n vCPU: 1, 2, 4... ate n.
+
+    Nao e cosmetico. Numa instancia de 2 vCPU nao existe medicao com n = 4, e
+    imprimir esse valor na ficha seria prometer um numero que a maquina nao
+    consegue produzir.
+    """
+    lista, k = [], 1
+    while k < n:
+        lista.append(k)
+        k *= 2
+    lista.append(n)
+    return sorted(set(lista))
+
+
+def por_extenso(valores):
+    if len(valores) == 1:
+        return str(valores[0])
+    return ", ".join(str(v) for v in valores[:-1]) + f" e {valores[-1]}"
+
+
 def virgula(x, casas=2):
     return f"{x:.{casas}f}".replace(".", ",")
 
 
 def montar_html(caminho_medicao="resultados/medicao.json"):
     n = INFRA["vcpu"]
+    fisicos = INFRA["nucleos_fisicos"]
     p_valor, p_rotulo = carregar_p(caminho_medicao)
-    teto_n = virgula(amdahl(p_valor, n))
-    teto_4 = virgula(amdahl(p_valor, 4))
-    teto_2 = virgula(amdahl(p_valor, 2))
+    varredura = trabalhadores(n)
+    lista_n = por_extenso(varredura)
+    tetos = " &middot; ".join(
+        f"<strong>n = {k} &rarr; {virgula(amdahl(p_valor, k))}</strong>"
+        for k in varredura if k > 1)
+
+    # Com SMT, os vCPU acima do numero de nucleos fisicos dividem unidade de
+    # execucao; sem SMT, cada vCPU e um nucleo. A frase muda conforme o caso.
+    if fisicos == 1:
+        expectativa = (
+            f"Com um &uacute;nico n&uacute;cleo f&iacute;sico, os {n} vCPU "
+            f"s&atilde;o threads de hardware do mesmo n&uacute;cleo: o segundo "
+            f"trabalhador n&atilde;o dobra a capacidade de c&aacute;lculo, e o "
+            f"speedup medido deve ficar bem abaixo do teto de Amdahl. A "
+            f"medi&ccedil;&atilde;o existe justamente para mostrar o tamanho "
+            f"dessa diferen&ccedil;a.")
+    elif n > fisicos:
+        expectativa = (
+            f"Espera-se escala pr&oacute;xima da linear at&eacute; "
+            f"n = {fisicos} e ganho marginal pequeno de {fisicos} para {n}, "
+            f"quando os trabalhadores passam a dividir n&uacute;cleos "
+            f"f&iacute;sicos.")
+    else:
+        expectativa = (
+            "Cada vCPU corresponde a um n&uacute;cleo f&iacute;sico, ent&atilde;o "
+            "n&atilde;o h&aacute; disputa por unidade de execu&ccedil;&atilde;o "
+            "entre os trabalhadores.")
 
     return f"""<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>Ficha da Etapa 1</title><style>{ESTILO}</style></head><body>
@@ -170,13 +217,12 @@ que duas threads executem bytecode ao mesmo tempo, de modo que a vers&atilde;o c
 threads mediria speedup pr&oacute;ximo de 1 e a an&aacute;lise concluiria o oposto
 do correto. A aplica&ccedil;&atilde;o tem o modo <code>--motor thread</code> para
 que essa afirma&ccedil;&atilde;o seja medida, e n&atilde;o apenas citada.</td></tr>
-<tr><td>Quantos trabalhadores em paralelo</td><td>1, 2, 4 e {n}</td>
+<tr><td>Quantos trabalhadores em paralelo</td><td>{lista_n}</td>
 <td>A inst&acirc;ncia {INFRA['tipo_instancia']} tem {n} vCPU sobre
-{INFRA['nucleos_fisicos']} n&uacute;cleos f&iacute;sicos. Mede-se a curva inteira
-para localizar onde o ganho satura: espera-se escala pr&oacute;xima da linear
-at&eacute; n = {INFRA['nucleos_fisicos']} e ganho marginal pequeno de
-{INFRA['nucleos_fisicos']} para {n}, quando os trabalhadores passam a dividir
-n&uacute;cleos f&iacute;sicos.</td></tr>
+{fisicos} n&uacute;cleo(s) f&iacute;sico(s). Mede-se a curva inteira para
+localizar onde o ganho satura. {expectativa} O teto de Amdahl para
+n = {n} limita o ganho a {virgula(amdahl(p_valor, n))}, e esse teto
+&eacute; propriedade da m&aacute;quina, n&atilde;o do programa.</td></tr>
 <tr><td>Como o trabalho &eacute; dividido entre eles</td>
 <td>Fila comum de lotes</td>
 <td>O corpus &eacute; cortado em lotes de 150 documentos, todos postos numa
@@ -271,9 +317,7 @@ junto com a fra&ccedil;&atilde;o serial experimental de Karp-Flatt,
 e = (1/S &minus; 1/n) / (1 &minus; 1/n).</td></tr>
 <tr><td>Speedup previsto pela lei de Amdahl</td>
 <td>S = 1 / ((1 &minus; p) + p/n), com p = {virgula(p_valor, 4)}:
-<strong>n = 2 &rarr; {teto_2}</strong>;
-<strong>n = 4 &rarr; {teto_4}</strong>;
-<strong>n = {n} &rarr; {teto_n}</strong>.
+{tetos}.
 A equipe espera ficar <em>abaixo</em> desses tetos, e o relat&oacute;rio vai
 explicar a diferen&ccedil;a pelas tr&ecirc;s causas que a lei n&atilde;o modela:
 comunica&ccedil;&atilde;o entre processos, espera na se&ccedil;&atilde;o
@@ -291,8 +335,7 @@ elevaria o compromisso para {INFRA['sla_multi_zona']}, mas o experimento exige
 que T(1) e T(n) sejam medidos no mesmo hardware &mdash; duas inst&acirc;ncias em
 zonas diferentes n&atilde;o comparariam a mesma coisa &mdash; e a aplica&ccedil;&atilde;o
 &eacute; um lote sob demanda, sem requisito de disponibilidade cont&iacute;nua.
-A regi&atilde;o de S&atilde;o Paulo foi escolhida por lat&ecirc;ncia at&eacute; a
-equipe e porque os dados tratados s&atilde;o de compras p&uacute;blicas brasileiras.</td></tr>
+{INFRA['motivo_regiao']}</td></tr>
 <tr><td>Fam&iacute;lia, tamanho e quantidade de inst&acirc;ncias</td>
 <td>1 &times; {INFRA['tipo_instancia']}<br>({n} vCPU, otimizada para
 computa&ccedil;&atilde;o)</td>
