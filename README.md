@@ -45,10 +45,7 @@ O trabalho por documento é literalmente a mesma função nas duas, importada de
 
 ## Estrutura
 
-O que vai ao professor fica na raiz; o que é material de trabalho da equipe
-fica em `apresentacao/`.
-
-**Entregue** — código-fonte em repositório, relatório em PDF e a ficha:
+Código-fonte em repositório, relatório em PDF e a ficha, como a lauda pede:
 
 ```
 src/
@@ -75,17 +72,9 @@ resultados/
   eventos.json       as fusões com carimbo lógico, citadas na seção C da ficha
 ```
 
-**Interno** — nada aqui é entregue:
-
-```
-apresentacao/
-  LEIAME.md          o que é entregue e o que não é
-  roteiro.md         roteiro dos 10 minutos e preparo para a arguição
-  rascunhos/         o HTML que os geradores produzem antes do PDF
-```
-
-`dados/` guarda o corpus gerado e não é versionado: são 79 MiB que
-`python3 src/corpus.py` reproduz byte a byte a partir da semente fixa.
+Não versionados: `dados/`, com o corpus gerado — 79 MiB que
+`python3 src/corpus.py` reproduz byte a byte a partir da semente fixa — e
+`rascunhos/`, com o HTML intermediário dos geradores de PDF.
 
 Só biblioteca padrão: nada a instalar além do Python (3.8 ou mais novo; a
 instância roda 3.12, e o projeto foi exercitado também em 3.9).
@@ -93,7 +82,7 @@ instância roda 3.12, e o projeto foi exercitado também em 3.9).
 A única dependência externa é opcional e serve só para fechar os PDFs:
 `src/pdf.py` tenta, nesta ordem, `wkhtmltopdf`, um navegador sem tela
 (Chrome/Chromium/Edge) e `weasyprint`. Não havendo nenhum, o HTML fica em
-`apresentacao/rascunhos/` e pode ser impresso para PDF pelo navegador.
+`rascunhos/` e pode ser impresso para PDF pelo navegador.
 
 ---
 

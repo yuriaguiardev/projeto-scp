@@ -8,7 +8,7 @@ resultados/relatorio_paralelo.json
 resultados/medicao.log
 
 # Passo intermediario dos geradores de PDF.
-apresentacao/rascunhos/
+rascunhos/
 
 __pycache__/
 *.pyc

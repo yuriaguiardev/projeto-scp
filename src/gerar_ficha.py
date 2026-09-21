@@ -336,15 +336,15 @@ def main():
     p.add_argument("--saida", default="ficha/ficha-etapa1-preenchida.pdf")
     p.add_argument("--medicao", default="resultados/medicao.json",
                    help="de onde ler a fracao paralelizavel instrumentada")
-    p.add_argument("--rascunhos", default="apresentacao/rascunhos",
+    p.add_argument("--rascunhos", default="rascunhos",
                    help="onde gravar o HTML intermediario")
     a = p.parse_args()
 
     conferir()
 
-    # O HTML e um passo intermediario, nao um entregavel: fica junto do material
-    # interno da equipe, para que relatorio/ e ficha/ contenham so o PDF que vai
-    # ao professor.
+    # O HTML e um passo intermediario, nao um entregavel: fica fora de
+    # relatorio/ e ficha/, para que essas pastas contenham so o PDF que vai ao
+    # professor. Nao e versionado.
     os.makedirs(os.path.dirname(a.saida) or ".", exist_ok=True)
     os.makedirs(a.rascunhos, exist_ok=True)
     nome_base = os.path.splitext(os.path.basename(a.saida))[0] + ".html"

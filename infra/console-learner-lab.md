@@ -320,5 +320,5 @@ Os PDFs passam a descrever a instância real, com os números medidos nela.
 | SSH dá timeout | seu IP mudou, ou a regra ficou com outro valor | EC2 → Security Groups → Edit inbound rules → Source: **My IP** |
 | `http://<IP>:8000` não abre | regra da 8000 ausente, ou serviço no ar | conferir a regra; `systemctl status triagem` |
 | "instance type not supported" | Learner Lab bloqueou o tipo | desça um degrau na tabela do passo 5 |
-| A instância sumiu | a sessão do lab expirou | **Start Lab** de novo; ela volta parada, dê *Start* nela em ECEC2 → Instances |
+| A instância sumiu | a sessão do lab expirou | **Start Lab** de novo; ela volta parada, dê *Start* nela em EC2 → Instances |
 | O crédito acabou | nada a fazer na conta | Plano B: rodar as demonstrações 1 e 3 no laptop, **ao vivo**, dizendo que é o laptop |
