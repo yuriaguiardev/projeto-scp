@@ -65,8 +65,9 @@ src/
   gerar_ficha.py     monta ficha/ficha-etapa1-preenchida.pdf
   pdf.py             converte HTML em PDF pelo conversor que houver na máquina
 infra/
-  provisionar.md     passo a passo na AWS (console e CLI)
-  user-data.sh       bootstrap da instância
+  console-learner-lab.md  passo a passo pelo console, clique a clique
+  provisionar.md          o mesmo pela linha de comando
+  user-data.sh            bootstrap da instância
 relatorio/relatorio.pdf
 ficha/ficha-etapa1-preenchida.pdf
 resultados/

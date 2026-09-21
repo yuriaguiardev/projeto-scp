@@ -4,6 +4,12 @@ Tudo aqui pode ser feito pelo console, e **na apresentação tem de ser pelo
 console, ao vivo**. Os comandos da CLI estão junto para que o provisionamento
 fique registrado e possa ser repetido.
 
+> **Se a conta for AWS Academy / Learner Lab** — que é o caso desta equipe —
+> comece por [`console-learner-lab.md`](console-learner-lab.md), que é o mesmo
+> provisionamento clique a clique e já conta com os limites do lab (região
+> travada, tipos de instância restritos, sessão que expira). Este arquivo aqui
+> serve de referência da CLI e do que cada recurso significa.
+
 Substitua os valores entre `<>` antes de rodar.
 
 ---
