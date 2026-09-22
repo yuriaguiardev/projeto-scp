@@ -200,8 +200,11 @@ def tabela_medicao(medicao, a):
               'no texto.</p>')
 
 
-MENOR_CAUSA = ("&Eacute; a menor das tr&ecirc;s causas: cada trabalhador entra "
-               "na trava uma vez por lote, n&atilde;o uma vez por documento.")
+DOMINANTE = "e <strong>&eacute; a causa dominante</strong> da diferen&ccedil;a."
+PARCIAL = "e responde por parte da diferen&ccedil;a."
+MENOR_CAUSA = ("&Eacute; a menor de todas: cada trabalhador entra na trava uma "
+               "vez por lote, n&atilde;o uma vez por documento. N&atilde;o &eacute; "
+               "aqui que o ganho se perde.")
 CAUSA_RELEVANTE = ("&Eacute; uma parcela relevante: vale aumentar o tamanho do "
                    "lote, para reduzir o n&uacute;mero de entradas na trava.")
 
@@ -232,13 +235,30 @@ def texto_analise(medicao, a):
         f'paraleliza&ccedil;&atilde;o introduziu e que n&atilde;o existia na '
         f'vers&atilde;o sequencial.</p>')
 
+    # As causas entram por relevancia medida, nao em ordem fixa. Numa maquina em
+    # que os vCPU dividem nucleo fisico, a disputa por unidade de execucao domina
+    # e a espera na trava e ruido; abrir a lista pela espera daria a impressao
+    # errada de onde o ganho se perdeu.
     causas = []
-    causas.append(
-        f'<li><strong>Espera na se&ccedil;&atilde;o cr&iacute;tica.</strong> '
-        f'A espera acumulada na trava foi de {f(m["espera_na_trava_s"])} s, '
-        f'{f(a["espera_pct"], 2)}&nbsp;% do tempo total de trabalhador '
-        f'({f(m["tempo_mediano_s"] * m["trabalhadores"])} s). '
-        f'{MENOR_CAUSA if a["espera_pct"] < 5 else CAUSA_RELEVANTE}</li>')
+    logicos = medicao["maquina"].get("nucleos_logicos")
+    smt = bool(nucleos and m["trabalhadores"] > nucleos)
+    if smt:
+        nucleo_txt = ("um &uacute;nico n&uacute;cleo f&iacute;sico" if nucleos == 1
+                      else f"{nucleos} n&uacute;cleos f&iacute;sicos")
+        detalhe = (
+            "Os dois s&atilde;o threads de hardware da mesma unidade de "
+            "execu&ccedil;&atilde;o: para trabalho limitado por processador, que "
+            "ocupa a unidade o tempo todo, o segundo trabalhador n&atilde;o tem "
+            "onde executar." if nucleos == 1 else
+            f"Acima de n = {nucleos} os trabalhadores passam a dividir unidades "
+            f"de execu&ccedil;&atilde;o, e o ganho marginal cai bem antes do que "
+            f"a lei de Amdahl sugere.")
+        causas.append(
+            f'<li><strong>vCPU n&atilde;o s&atilde;o n&uacute;cleos '
+            f'independentes.</strong> A inst&acirc;ncia tem {logicos} vCPU sobre '
+            f'{nucleo_txt}. {detalhe} A lei de Amdahl sup&otilde;e n processadores '
+            f'independentes, e essa hip&oacute;tese n&atilde;o vale aqui &mdash; '
+            f'{DOMINANTE if a["lacuna_pct"] > 25 else PARCIAL}</li>')
     causas.append(
         '<li><strong>Comunica&ccedil;&atilde;o entre processos.</strong> O agregador '
         'global vive no processo do <code>Manager</code>; cada leitura e cada '
@@ -247,14 +267,6 @@ def texto_analise(medicao, a):
         'vers&atilde;o sequencial, logo n&atilde;o aparece em p e o teto de Amdahl '
         'n&atilde;o o prev&ecirc;. &Eacute; o motivo de a assinatura viajar comprimida '
         'em 16 d&iacute;gitos em vez das 64 posi&ccedil;&otilde;es originais.</li>')
-    if nucleos and m["trabalhadores"] > nucleos:
-        causas.append(
-            f'<li><strong>N&uacute;cleos l&oacute;gicos, n&atilde;o f&iacute;sicos.</strong> '
-            f'A inst&acirc;ncia tem {medicao["maquina"]["nucleos_logicos"]} vCPU sobre '
-            f'{nucleos} n&uacute;cleos f&iacute;sicos. Acima de n = {nucleos} os '
-            f'trabalhadores passam a dividir unidades de execu&ccedil;&atilde;o, '
-            f'e o ganho marginal cai bem antes do que a lei de Amdahl sugere, '
-            f'porque a lei sup&otilde;e n processadores independentes.</li>')
     causas.append(
         '<li><strong>Divis&atilde;o desigual do trabalho.</strong> Os lotes t&ecirc;m o '
         'mesmo n&uacute;mero de documentos, mas os documentos t&ecirc;m tamanhos '
@@ -263,6 +275,12 @@ def texto_analise(medicao, a):
         'fila enquanto outros ainda processam o &uacute;ltimo lote. A fila comum '
         'reduz esse efeito, mas n&atilde;o o elimina: o limite inferior &eacute; o '
         'lote mais caro.</li>')
+    causas.append(
+        f'<li><strong>Espera na se&ccedil;&atilde;o cr&iacute;tica.</strong> '
+        f'A espera acumulada na trava foi de {f(m["espera_na_trava_s"])} s, '
+        f'{f(a["espera_pct"], 2)}&nbsp;% do tempo total de trabalhador '
+        f'({f(m["tempo_mediano_s"] * m["trabalhadores"])} s). '
+        f'{MENOR_CAUSA if a["espera_pct"] < 5 else CAUSA_RELEVANTE}</li>')
     partes.append("<ul>" + "".join(causas) + "</ul>")
 
     if a["threads"]:

@@ -42,7 +42,7 @@ INFRA = {
     # versionados no repositorio. None faz a ficha e o relatorio descreverem
     # esse arranjo em vez de prometerem um S3 que nao existe.
     "bucket": None,
-    "origem_admin": "131.255.64.194/32",
+    "origem_admin": "177.180.12.98/32",
     "porta_servico": 8000,
     "documentos_previstos": 8000,    # dimensionado por calibrar.py na instancia
     "alvo_minutos": 3,               # tempo alvo da execucao sequencial
