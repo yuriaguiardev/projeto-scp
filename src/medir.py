@@ -86,17 +86,34 @@ def descrever_maquina():
                 ["sysctl", "-n", "machdep.cpu.brand_string"], text=True).strip()
         except Exception:
             pass
+    # Servico de metadados da EC2. Instancias criadas hoje exigem IMDSv2: e
+    # preciso pedir um token por PUT e mande-lo em cada leitura. A chamada
+    # direta, sem token, devolve 401 e o relatorio deixaria de identificar a
+    # instancia. Tenta-se IMDSv2 e, se nao houver token, cai para IMDSv1, que
+    # ainda responde em instancias antigas.
+    base = "http://169.254.169.254/latest"
+    cabecalho = []
     try:
-        info["tipo_instancia"] = subprocess.check_output(
-            ["curl", "-s", "--max-time", "2",
-             "http://169.254.169.254/latest/meta-data/instance-type"],
-            text=True).strip() or None
-        info["zona"] = subprocess.check_output(
-            ["curl", "-s", "--max-time", "2",
-             "http://169.254.169.254/latest/meta-data/placement/availability-zone"],
-            text=True).strip() or None
+        token = subprocess.check_output(
+            ["curl", "-s", "--max-time", "2", "-X", "PUT",
+             f"{base}/api/token",
+             "-H", "X-aws-ec2-metadata-token-ttl-seconds: 60"],
+            text=True, stderr=subprocess.DEVNULL).strip()
+        if token:
+            cabecalho = ["-H", f"X-aws-ec2-metadata-token: {token}"]
     except Exception:
         pass
+    for chave, caminho in (("tipo_instancia", "meta-data/instance-type"),
+                           ("zona", "meta-data/placement/availability-zone")):
+        try:
+            valor = subprocess.check_output(
+                ["curl", "-s", "--max-time", "2", *cabecalho, f"{base}/{caminho}"],
+                text=True, stderr=subprocess.DEVNULL).strip()
+            # fora da EC2 o endereco nao responde; dentro, um erro volta como
+            # documento HTML ou mensagem de erro, nunca como um tipo valido
+            info[chave] = valor if valor and "<" not in valor and " " not in valor else None
+        except Exception:
+            info[chave] = None
     return info
 
 
