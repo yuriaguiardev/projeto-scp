@@ -306,6 +306,26 @@ def montar_html(medicao):
 
     ev = (medicao or {}).get("eventos")
 
+    # A saida do projeto sao dois JSON de poucos KiB. Sem bucket configurado,
+    # o relatorio descreve o arranjo real em vez de prometer um S3 inexistente.
+    if INFRA["bucket"]:
+        saida_escolha = f"EBS gp3 {INFRA['disco_gib']} GiB; c&oacute;pia em S3"
+        saida_motivo = (
+            f"Os relat&oacute;rios e a medi&ccedil;&atilde;o s&atilde;o arquivados "
+            f"no bucket <code>{INFRA['bucket']}</code>, com bloqueio de acesso "
+            f"p&uacute;blico e criptografia SSE-S3.")
+    else:
+        saida_escolha = (f"EBS gp3 {INFRA['disco_gib']} GiB; sa&iacute;da "
+                         f"versionada no reposit&oacute;rio")
+        saida_motivo = (
+            "A sa&iacute;da s&atilde;o dois arquivos JSON de poucos KiB &mdash; a "
+            "medi&ccedil;&atilde;o e o registro de eventos &mdash; versionados no "
+            "reposit&oacute;rio junto com o c&oacute;digo que os gerou. Um bucket "
+            "S3 resolveria o mesmo problema, sobreviver ao encerramento da "
+            "inst&acirc;ncia, com um servi&ccedil;o a mais para provisionar e "
+            "controlar: para este volume, o reposit&oacute;rio basta e mant&eacute;m "
+            "resultado e c&oacute;digo na mesma vers&atilde;o.")
+
     return f"""<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>Relatorio tecnico - Etapa 1</title><style>{ESTILO}</style></head><body>
 
@@ -428,7 +448,7 @@ de corrida exibida ao vivo, e n&atilde;o uma descri&ccedil;&atilde;o dela.</p>
 <tr><th style="width:26%">Decis&atilde;o</th><th style="width:26%">Escolha</th><th>Justificativa</th></tr>
 <tr><td>Regi&atilde;o e zonas</td><td>{INFRA['regiao']}, uma zona ({zona})</td><td>Inst&acirc;ncia isolada em zona &uacute;nica: vale o compromisso de <strong>99,5&nbsp;%</strong> do SLA do EC2, ou 216 minutos de indisponibilidade admitida em 30 dias. Distribuir por duas ou mais zonas elevaria o compromisso para 99,99&nbsp;% (4,3 minutos), mas o experimento exige que T(1) e T(n) sejam medidos no <em>mesmo</em> hardware: duas inst&acirc;ncias em zonas diferentes n&atilde;o comparariam a mesma coisa. A disponibilidade n&atilde;o &eacute; requisito de um lote que roda sob demanda.</td></tr>
 <tr><td>Fam&iacute;lia, tamanho e quantidade</td><td>1 &times; {instancia}</td><td>Fam&iacute;lia otimizada para computa&ccedil;&atilde;o, sem cr&eacute;ditos de CPU. Inst&acirc;ncia burst&aacute;vel (t2, t3) &eacute; inadequada para medir speedup: ao esgotar os cr&eacute;ditos, o desempenho cai no meio da medi&ccedil;&atilde;o e o T(n) deixa de ser compar&aacute;vel ao T(1).</td></tr>
-<tr><td>Entrada e sa&iacute;da</td><td>EBS gp3 {INFRA['disco_gib']} GiB; c&oacute;pia em S3</td><td>O corpus ({volume}) &eacute; gerado no volume local, para que a leitura n&atilde;o introduza lat&ecirc;ncia de rede no tempo medido. Os relat&oacute;rios e a medi&ccedil;&atilde;o s&atilde;o arquivados no bucket <code>{INFRA['bucket']}</code>, com bloqueio de acesso p&uacute;blico e criptografia SSE-S3.</td></tr>
+<tr><td>Entrada e sa&iacute;da</td><td>{saida_escolha}</td><td>O corpus ({volume}) &eacute; gerado no volume local, para que a leitura n&atilde;o introduza lat&ecirc;ncia de rede no tempo medido. {saida_motivo}</td></tr>
 <tr><td>Portas e origem</td><td>22/tcp de {INFRA['origem_admin']}; 8000/tcp de 0.0.0.0/0</td><td>A porta administrativa <strong>n&atilde;o</strong> aceita 0.0.0.0/0: a porta 22 exposta &agrave; internet recebe tentativas autom&aacute;ticas de autentica&ccedil;&atilde;o continuamente, e restringi-la ao endere&ccedil;o da equipe retira a inst&acirc;ncia dessa superf&iacute;cie sem depender da for&ccedil;a da chave. A porta 8000 serve o painel da aplica&ccedil;&atilde;o e &eacute; a &uacute;nica aberta ao p&uacute;blico.</td></tr>
 <tr><td>Ciclo de vida</td><td>Ligada durante a janela de medi&ccedil;&atilde;o</td><td>Criar a inst&acirc;ncia por execu&ccedil;&atilde;o traria hardware subjacente potencialmente diferente entre T(1) e T(n). Como o speedup exige a mesma m&aacute;quina, a inst&acirc;ncia permanece ligada do in&iacute;cio da medi&ccedil;&atilde;o at&eacute; o fim da apresenta&ccedil;&atilde;o, e &eacute; encerrada depois.</td></tr>
 </table>

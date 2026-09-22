@@ -24,15 +24,21 @@ from configuracao import DISCIPLINA, EQUIPE, INFRA, pendencias
 P_ESTIMADO = 0.995
 
 
-def carregar_p(caminho):
-    """Devolve (p, rotulo). Prefere o p instrumentado da medicao."""
+def carregar_medicao(caminho):
+    """Le resultados/medicao.json, ou None se a bancada ainda nao rodou."""
     try:
         with open(caminho, encoding="utf-8") as arq:
-            valor = json.load(arq)["sequencial"]["p_instrumentado"]
-        if isinstance(valor, (int, float)):
-            return float(valor), "medido por instrumenta&ccedil;&atilde;o"
+            return json.load(arq)
     except Exception:
-        pass
+        return None
+
+
+def carregar_p(caminho):
+    """Devolve (p, rotulo). Prefere o p instrumentado da medicao."""
+    medicao = carregar_medicao(caminho)
+    valor = (medicao or {}).get("sequencial", {}).get("p_instrumentado")
+    if isinstance(valor, (int, float)):
+        return float(valor), "medido por instrumenta&ccedil;&atilde;o"
     return P_ESTIMADO, "estimado pela equipe"
 
 
@@ -125,6 +131,38 @@ def montar_html(caminho_medicao="resultados/medicao.json"):
 
     # Com SMT, os vCPU acima do numero de nucleos fisicos dividem unidade de
     # execucao; sem SMT, cada vCPU e um nucleo. A frase muda conforme o caso.
+    docs = INFRA["documentos_previstos"]
+    volume_corpus = f"aprox. {docs * 10.4 / 1024:.0f} MiB"
+    tempo_medido = ""
+    medicao = carregar_medicao(caminho_medicao)
+    if medicao:
+        corpus = medicao.get("corpus", {})
+        if corpus.get("documentos"):
+            docs = corpus["documentos"]
+            volume_corpus = f"{corpus['bytes'] / 1048576:.0f} MiB"
+        t1 = medicao.get("sequencial", {}).get("tempo_mediano_s")
+        if t1:
+            tempo_medido = (f"Medido na inst&acirc;ncia: "
+                            f"<strong>{virgula(t1 / 60, 1)} min</strong>.")
+    if INFRA["bucket"]:
+        saida_escolha = (f"EBS gp3 de {INFRA['disco_gib']} GiB; c&oacute;pia no "
+                         f"bucket S3 <code>{INFRA['bucket']}</code>")
+        saida_motivo = (
+            "Relat&oacute;rios, registro de eventos e <code>medicao.json</code> "
+            "s&atilde;o arquivados no S3 com bloqueio de acesso p&uacute;blico e "
+            "criptografia SSE-S3, para que sobrevivam ao encerramento da "
+            "inst&acirc;ncia.")
+    else:
+        saida_escolha = (f"EBS gp3 de {INFRA['disco_gib']} GiB; sa&iacute;da "
+                         f"versionada no reposit&oacute;rio")
+        saida_motivo = (
+            "A sa&iacute;da s&atilde;o <code>medicao.json</code> e "
+            "<code>eventos.json</code>, dois arquivos de poucos KiB, versionados "
+            "no reposit&oacute;rio junto com o c&oacute;digo que os gerou &mdash; "
+            "assim sobrevivem ao encerramento da inst&acirc;ncia e ficam na mesma "
+            "vers&atilde;o do c&oacute;digo. Um bucket S3 resolveria o mesmo "
+            "problema com um servi&ccedil;o a mais para provisionar e controlar; "
+            "para este volume n&atilde;o se justifica.")
     if fisicos == 1:
         expectativa = (
             f"Com um &uacute;nico n&uacute;cleo f&iacute;sico, os {n} vCPU "
@@ -180,11 +218,11 @@ estado global. A depend&ecirc;ncia s&oacute; aparece na agrega&ccedil;&atilde;o
 dos resultados, e a agrega&ccedil;&atilde;o &eacute; associativa e comutativa.</td></tr>
 <tr><td>Qual &eacute; o volume da entrada, e quanto tempo a vers&atilde;o
 sequencial deve levar?</td>
-<td>{INFRA['documentos_previstos']} editais de cerca de 10 KiB cada, aproximadamente
-150 MiB de texto. O volume n&atilde;o foi arbitrado: <code>src/calibrar.py</code>
-mede o custo por documento na pr&oacute;pria inst&acirc;ncia e calcula quantos
-documentos s&atilde;o precisos para o alvo de <strong>4 minutos</strong> de
-execu&ccedil;&atilde;o sequencial.</td></tr>
+<td>{docs} editais de cerca de 10 KiB cada, {volume_corpus} de texto.
+O volume n&atilde;o foi arbitrado: <code>src/calibrar.py</code> mede o custo por
+documento na pr&oacute;pria inst&acirc;ncia e calcula quantos documentos s&atilde;o
+precisos para o alvo de <strong>{INFRA['alvo_minutos']} minutos</strong> de
+execu&ccedil;&atilde;o sequencial. {tempo_medido}</td></tr>
 <tr><td>Como se verifica que o resultado est&aacute; correto?</td>
 <td>O relat&oacute;rio final &eacute; canonizado &mdash; a ordena&ccedil;&atilde;o
 depende s&oacute; do conte&uacute;do, nunca da ordem de chegada &mdash; e reduzido
@@ -345,13 +383,9 @@ desempenho cai no meio da medi&ccedil;&atilde;o e T(n) deixa de ser
 compar&aacute;vel a T(1). Uma s&oacute; inst&acirc;ncia, porque o objeto da medida
 &eacute; o ganho por n&uacute;cleo dentro de uma m&aacute;quina.</td></tr>
 <tr><td>Onde ficam a entrada e a sa&iacute;da, e qual o volume</td>
-<td>EBS gp3 de {INFRA['disco_gib']} GiB; c&oacute;pia no bucket S3
-<code>{INFRA['bucket']}</code></td>
-<td>O corpus (aprox. 150 MiB) &eacute; gerado no volume local, para que a leitura
-n&atilde;o introduza lat&ecirc;ncia de rede dentro do tempo medido. Relat&oacute;rios,
-registro de eventos e <code>medicao.json</code> (menos de 5 MiB) s&atilde;o
-arquivados no S3 com bloqueio de acesso p&uacute;blico e criptografia SSE-S3, para
-que sobrevivam ao encerramento da inst&acirc;ncia.</td></tr>
+<td>{saida_escolha}</td>
+<td>O corpus ({volume_corpus}) &eacute; gerado no volume local, para que a leitura
+n&atilde;o introduza lat&ecirc;ncia de rede dentro do tempo medido. {saida_motivo}</td></tr>
 <tr><td>Portas abertas, e a origem de cada regra</td>
 <td>22/tcp &larr; {INFRA['origem_admin']}<br>
 {INFRA['porta_servico']}/tcp &larr; 0.0.0.0/0<br>

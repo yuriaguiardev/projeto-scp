@@ -38,10 +38,14 @@ INFRA = {
     "vcpu": 2,
     "nucleos_fisicos": 1,
     "disco_gib": 30,
-    "bucket": "sdp-etapa1-equipe (PREENCHER)",
+    # Nenhum bucket foi criado: a saida do projeto sao dois JSON de poucos KiB,
+    # versionados no repositorio. None faz a ficha e o relatorio descreverem
+    # esse arranjo em vez de prometerem um S3 que nao existe.
+    "bucket": None,
     "origem_admin": "131.255.64.194/32",
     "porta_servico": 8000,
-    "documentos_previstos": 15000,
+    "documentos_previstos": 8000,    # dimensionado por calibrar.py na instancia
+    "alvo_minutos": 3,               # tempo alvo da execucao sequencial
     # Por que esta regiao. Na conta da equipe (AWS Academy Learner Lab) a
     # regiao nao e escolha: o laboratorio restringe a operacao a us-east-1.
     "motivo_regiao": (
@@ -71,8 +75,10 @@ def pendencias():
                      if not i.get("matricula") or "PREENCHER" in i["matricula"]]
     if sem_matricula:
         faltando.append("matricula de " + ", ".join(sem_matricula))
+    # bucket = None e uma decisao registrada (nao se usa S3), nao uma pendencia
     for chave, rotulo in (("bucket", "nome do bucket S3"),
                           ("origem_admin", "IP publico da equipe (origem da porta 22)")):
-        if "PREENCHER" in str(INFRA[chave]):
+        valor = INFRA[chave]
+        if valor is not None and "PREENCHER" in str(valor):
             faltando.append(rotulo)
     return faltando

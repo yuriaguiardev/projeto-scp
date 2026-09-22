@@ -55,6 +55,10 @@ ESTADO = {
     # um numero inventado.
     "p_paralelizavel": None,
     "origem_p": "ainda nao medido",
+    # A ultima triagem produzida. O painel mostrava so o desempenho e descartava
+    # o resultado - que e o que a aplicacao existe para produzir. Guarda-se o
+    # relatorio da execucao mais recente para exibi-lo.
+    "ultimo_relatorio": None,
 }
 TRAVA_ESTADO = threading.Lock()
 
@@ -114,6 +118,7 @@ def executar_em_segundo_plano(parametros):
     }
 
     with TRAVA_ESTADO:
+        ESTADO["ultimo_relatorio"] = relatorio
         if versao == "sequencial":
             ESTADO["tempo_sequencial_s"] = duracao
             if p_medido is not None:
@@ -181,14 +186,60 @@ PAGINA = """<!doctype html>
  <a class="botao" href="/api/executar?versao=paralela&amp;motor=thread&amp;trabalhadores={nucleos}">threads (GIL)</a>
 </fieldset>
 <fieldset><legend>Execucoes</legend><div class="rolagem">{tabela}</div></fieldset>
+<fieldset><legend>Resultado da triagem</legend>{triagem}</fieldset>
 <script>setTimeout(function(){{location.reload();}}, 3000);</script>
 </body></html>"""
+
+
+def montar_triagem(relatorio):
+    """A saida da aplicacao: ranking, linhas de produto e termos."""
+    if not relatorio:
+        return ("<p style='color:var(--suave)'>Rode uma execucao para ver o "
+                "resultado da triagem.</p>")
+
+    topo = "".join(
+        f"<tr><td>{i}</td><td class='mono'>{html.escape(e['doc_id'])}</td>"
+        f"<td style='text-align:right'><strong>{e['pontuacao']}</strong></td></tr>"
+        for i, e in enumerate(relatorio["top"][:10], 1))
+
+    total = max(relatorio["documentos"], 1)
+    linhas = "".join(
+        f"<tr><td>{html.escape(nome)}</td>"
+        f"<td style='text-align:right'>{n}</td>"
+        f"<td style='width:55%'><span style='display:inline-block; height:.7rem; "
+        f"background:var(--destaque); width:{100*n/total:.1f}%'></span></td></tr>"
+        for nome, n in sorted(relatorio["linhas"], key=lambda p: -p[1]))
+
+    termos = "".join(
+        f"<tr><td class='mono'>{html.escape(t)}</td>"
+        f"<td style='text-align:right'>{n}</td></tr>"
+        for t, n in relatorio["termos"][:12])
+
+    return (
+        "<div style='display:flex; gap:2rem; flex-wrap:wrap; align-items:start'>"
+        "<div style='flex:1; min-width:19rem'>"
+        "<h2 style='font-size:.8rem; text-transform:uppercase; letter-spacing:.06em;"
+        " color:var(--suave); font-weight:600; margin:0 0 .5rem'>Editais mais aderentes</h2>"
+        f"<table><tr><th>#</th><th>documento</th><th style='text-align:right'>pontuacao</th></tr>{topo}</table></div>"
+        "<div style='flex:1; min-width:19rem'>"
+        "<h2 style='font-size:.8rem; text-transform:uppercase; letter-spacing:.06em;"
+        " color:var(--suave); font-weight:600; margin:0 0 .5rem'>Linha de produto</h2>"
+        f"<table>{linhas}</table>"
+        "<h2 style='font-size:.8rem; text-transform:uppercase; letter-spacing:.06em;"
+        " color:var(--suave); font-weight:600; margin:1.25rem 0 .5rem'>Termos da taxonomia</h2>"
+        f"<table>{termos}</table></div></div>"
+        f"<p style='margin-top:1rem; font-size:.85rem; color:var(--suave)'>"
+        f"{relatorio['documentos']} documentos &middot; "
+        f"{relatorio['assinaturas_distintas']} assinaturas distintas &middot; "
+        f"<strong>{relatorio['documentos_duplicados']}</strong> republicacoes "
+        f"reconhecidas pelo MinHash &middot; {relatorio['tokens']:,} tokens</p>".replace(",", "."))
 
 
 def montar_pagina():
     with TRAVA_ESTADO:
         historico = list(ESTADO["historico"])
         ocupado = ESTADO["ocupado"]
+        relatorio = ESTADO["ultimo_relatorio"]
     nucleos = os.cpu_count()
 
     botoes = "".join(
@@ -237,6 +288,7 @@ def montar_pagina():
         situacao="executando..." if ocupado else "ocioso",
         botoes=botoes,
         tabela=tabela,
+        triagem=montar_triagem(relatorio),
         p=(f"{p_atual:.4f}".replace(".", ",") if p_atual else "&mdash;"),
         origem_p=html.escape(origem_p, quote=True),
     )
